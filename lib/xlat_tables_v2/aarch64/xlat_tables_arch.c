@@ -80,8 +80,6 @@ int is_mmu_enabled(int el)
 	}
 }
 
-#if PLAT_XLAT_TABLES_DYNAMIC
-
 void xlat_arch_tlbi_va(int el, uintptr_t va)
 {
 	/*
@@ -120,8 +118,6 @@ void xlat_arch_tlbi_va_sync(void)
 	 */
 	isb();
 }
-
-#endif /* PLAT_XLAT_TABLES_DYNAMIC */
 
 int xlat_arch_current_el(void)
 {
