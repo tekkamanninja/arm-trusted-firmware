@@ -314,7 +314,7 @@ static void xlat_tables_unmap_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 		if (action == ACTION_WRITE_BLOCK_ENTRY) {
 
 			table_base[table_idx] = INVALID_DESC;
-			xlat_arch_tlbi_va(table_idx_va);
+			xlat_arch_tlbi_va(ctx->exception_level, table_idx_va);
 
 		} else if (action == ACTION_RECURSE_INTO_TABLE) {
 
@@ -330,7 +330,8 @@ static void xlat_tables_unmap_region(xlat_ctx_t *ctx, mmap_region_t *mm,
 			 */
 			if (xlat_table_is_empty(ctx, subtable)) {
 				table_base[table_idx] = INVALID_DESC;
-				xlat_arch_tlbi_va(table_idx_va);
+				xlat_arch_tlbi_va(ctx->exception_level,
+						  table_idx_va);
 			}
 
 		} else {
@@ -1143,13 +1144,14 @@ void init_xlat_tables_ctx(xlat_ctx_t *ctx)
 {
 	mmap_region_t *mm = ctx->mmap;
 
-	assert(!is_mmu_enabled());
+	ctx->exception_level = xlat_arch_current_el();
+	assert(!is_mmu_enabled(ctx->exception_level));
 	assert(!ctx->initialized);
 
 	print_mmap(mm);
 
 	ctx->execute_never_mask =
-			xlat_arch_get_xn_desc(xlat_arch_current_el());
+			xlat_arch_get_xn_desc(ctx->exception_level);
 
 	/* All tables must be zeroed before mapping any region. */
 

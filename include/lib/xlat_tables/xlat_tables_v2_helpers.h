@@ -30,6 +30,11 @@ struct mmap_region;
 /* Struct that holds all information about the translation tables. */
 struct xlat_ctx {
 	/*
+	 * Exception Level in which this context is used.
+	 */
+	int exception_level;
+
+	/*
 	 * Max allowed Virtual and Physical Addresses.
 	 */
 	unsigned long long pa_max_address;

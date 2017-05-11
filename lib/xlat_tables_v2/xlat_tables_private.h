@@ -39,7 +39,7 @@ typedef enum  {
  * virtual address. It must be called for every translation table entry that is
  * modified.
  */
-void xlat_arch_tlbi_va(uintptr_t va);
+void xlat_arch_tlbi_va(int el, uintptr_t va);
 
 /*
  * This function has to be called at the end of any code that uses the function
@@ -83,6 +83,6 @@ void enable_mmu_arch(unsigned int flags, uint64_t *base_table,
 		unsigned long long pa, uintptr_t max_va);
 
 /* Return 1 if the MMU of this Exception Level is enabled, 0 otherwise. */
-int is_mmu_enabled(void);
+int is_mmu_enabled(int el);
 
 #endif /* __XLAT_TABLES_PRIVATE_H__ */
