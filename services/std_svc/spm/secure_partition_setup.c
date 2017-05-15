@@ -60,7 +60,7 @@ void secure_partition_setup(void)
 	mmap_add_ctx(secure_partition_xlat_ctx_handle,
 		     plat_arm_get_secure_partition_mmap(NULL));
 
-	init_xlat_tables_ctx(1, secure_partition_xlat_ctx_handle);
+	init_xlat_tables_ctx(secure_partition_xlat_ctx_handle);
 
 	VERBOSE("S-EL1/S-EL0 context setup end.\n");
 }
