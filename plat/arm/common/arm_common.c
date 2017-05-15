@@ -12,11 +12,25 @@
 #include <plat_arm.h>
 #include <platform_def.h>
 
+#if SPM
+#include <secure_partition.h>
+#endif
+
 extern const mmap_region_t plat_arm_mmap[];
+
+#if SPM && defined(IMAGE_BL31)
+extern const mmap_region_t plat_arm_secure_partition_mmap[];
+extern const secure_partition_boot_info_t plat_arm_secure_partition_boot_info;
+#endif
 
 /* Weak definitions may be overridden in specific ARM standard platform */
 #pragma weak plat_get_ns_image_entrypoint
 #pragma weak plat_arm_get_mmap
+
+#if SPM && defined(IMAGE_BL31)
+#pragma weak plat_arm_get_secure_partition_mmap
+#pragma weak plat_arm_get_secure_partition_boot_info
+#endif
 
 /* Conditionally provide a weak definition of plat_get_syscnt_freq2 to avoid
  * conflicts with the definition in plat/common. */
@@ -77,6 +91,18 @@ void arm_setup_page_tables(uintptr_t total_base,
 	mmap_add_region(coh_start, coh_start,
 			coh_limit - coh_start,
 			MT_DEVICE | MT_RW | MT_SECURE);
+#endif
+
+#if SPM && defined(IMAGE_BL31)
+	mmap_add_region(SECURE_PARTITION_XLAT_TABLES_BASE,
+			SECURE_PARTITION_XLAT_TABLES_BASE,
+			SECURE_PARTITION_XLAT_TABLES_SIZE,
+			MT_MEMORY | MT_RW | MT_SECURE);
+
+	mmap_add_region(SECURE_PARTITION_SPM_BUF_BASE,
+			SECURE_PARTITION_SPM_BUF_BASE,
+			SECURE_PARTITION_SPM_BUF_SIZE,
+			MT_MEMORY | MT_RW | MT_SECURE);
 #endif
 
 	/* Now (re-)map the platform-specific memory regions */
@@ -177,6 +203,19 @@ const mmap_region_t *plat_arm_get_mmap(void)
 {
 	return plat_arm_mmap;
 }
+
+#if SPM && defined(IMAGE_BL31)
+const mmap_region_t *plat_arm_get_secure_partition_mmap(void *cookie)
+{
+	return plat_arm_secure_partition_mmap;
+}
+
+const secure_partition_boot_info_t *plat_arm_get_secure_partition_boot_info(
+	void *cookie)
+{
+	return &plat_arm_secure_partition_boot_info;
+}
+#endif
 
 #ifdef ARM_SYS_CNTCTL_BASE
 

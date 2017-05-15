@@ -13,6 +13,9 @@
 #include <gicv2.h>
 #include <mmio.h>
 #include <plat_arm.h>
+#if SPM && defined(IMAGE_BL31)
+#include <secure_partition.h>
+#endif
 #include <v2m_def.h>
 #include "../fvp_def.h"
 
@@ -82,6 +85,9 @@ const mmap_region_t plat_arm_mmap[] = {
 #ifdef SPD_tspd
 	ARM_MAP_TSP_SEC_MEM,
 #endif
+#if SPM
+	SECURE_PARTITION_IMAGE_MMAP,
+#endif
 #if TRUSTED_BOARD_BOOT
 	/* To access the Root of Trust Public Key registers. */
 	MAP_DEVICE2,
@@ -111,6 +117,17 @@ const mmap_region_t plat_arm_mmap[] = {
 	MAP_DEVICE1,
 	{0}
 };
+
+#if SPM && defined(IMAGE_BL31)
+const mmap_region_t plat_arm_secure_partition_mmap[] = {
+	V2M_MAP_IOFPGA, /* for the UART */
+	SECURE_PARTITION_IMAGE_MMAP,
+	SECURE_PARTITION_SPM_BUF_MMAP,
+	SECURE_PARTITION_NS_BUF_MMAP,
+	SECURE_PARTITION_RW_MMAP,
+	{0}
+};
+#endif
 #endif
 #ifdef IMAGE_BL32
 const mmap_region_t plat_arm_mmap[] = {
@@ -125,6 +142,46 @@ const mmap_region_t plat_arm_mmap[] = {
 #endif
 
 ARM_CASSERT_MMAP
+
+#if SPM && defined(IMAGE_BL31)
+/*
+ * Boot information passed to a secure partition during initialisation. Linear
+ * indices in MP information will be filled at runtime.
+ */
+static secure_partition_mp_info_t sp_mp_info[] = {
+	[0] = {0x80000000, 0},
+	[1] = {0x80000001, 0},
+	[2] = {0x80000002, 0},
+	[3] = {0x80000003, 0},
+	[4] = {0x80000100, 0},
+	[5] = {0x80000101, 0},
+	[6] = {0x80000102, 0},
+	[7] = {0x80000103, 0},
+};
+
+const secure_partition_boot_info_t plat_arm_secure_partition_boot_info = {
+	.h.type              = PARAM_SECURE_PARTITION_BOOT_INFO,
+	.h.version           = VERSION_1,
+	.h.size              = sizeof(secure_partition_boot_info_t),
+	.h.attr              = 0,
+	.sp_mem_base         = SECURE_PARTITION_BASE,
+	.sp_mem_limit        = BL32_LIMIT,
+	.sp_image_base       = SECURE_PARTITION_BASE,
+	.sp_stack_base       = SECURE_PARTITION_STACK_BASE,
+	.sp_heap_base        = SECURE_PARTITION_HEAP_BASE,
+	.sp_ns_comm_buf_base = SECURE_PARTITION_NS_BUF_BASE,
+	.sp_shared_buf_base  = SECURE_PARTITION_SPM_BUF_BASE,
+	.sp_image_size       = SECURE_PARTITION_SIZE,
+	.sp_pcpu_stack_size  = SECURE_PARTITION_STACK_PCPU_SIZE,
+	.sp_heap_size        = SECURE_PARTITION_HEAP_SIZE,
+	.sp_ns_comm_buf_size = SECURE_PARTITION_NS_BUF_SIZE,
+	.sp_shared_buf_size  = SECURE_PARTITION_SPM_BUF_SIZE,
+	.num_sp_mem_regions  = SECURE_PARTITION_NUM_MEM_REGIONS,
+	.num_cpus            = PLATFORM_CORE_COUNT,
+	.mp_info             = &sp_mp_info[0],
+};
+
+#endif
 
 #if FVP_INTERCONNECT_DRIVER != FVP_CCN
 static const int fvp_cci400_map[] = {
