@@ -121,6 +121,17 @@ typedef struct xlat_ctx xlat_ctx_t;
 	_REGISTER_XLAT_CONTEXT(_ctx_name, _mmap_count, _xlat_tables_count,	\
 		_virt_addr_space_size, _phy_addr_space_size)
 
+/*
+ * Same as REGISTER_XLAT_CONTEXT but allows to target a different exception
+ * level than the current one.
+ */
+#define REGISTER_XLAT_CONTEXT_EL(_ctx_name, _mmap_count, _xlat_tables_count,	\
+				 _virt_addr_space_size, _phy_addr_space_size,	\
+				 _exception_level)				\
+	_REGISTER_XLAT_CONTEXT_EL(_ctx_name, _mmap_count, _xlat_tables_count,	\
+				  _virt_addr_space_size, _phy_addr_space_size,	\
+				  _exception_level)
+
 /******************************************************************************
  * Generic translation table APIs.
  * Each API comes in 2 variants:
