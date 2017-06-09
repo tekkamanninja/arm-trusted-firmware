@@ -28,8 +28,8 @@ extern const secure_partition_boot_info_t plat_arm_secure_partition_boot_info;
 #pragma weak plat_arm_get_mmap
 
 #if SPM && defined(IMAGE_BL31)
-#pragma weak plat_arm_get_secure_partition_mmap
-#pragma weak plat_arm_get_secure_partition_boot_info
+#pragma weak plat_get_secure_partition_mmap
+#pragma weak plat_get_secure_partition_boot_info
 #endif
 
 /* Conditionally provide a weak definition of plat_get_syscnt_freq2 to avoid
@@ -205,12 +205,12 @@ const mmap_region_t *plat_arm_get_mmap(void)
 }
 
 #if SPM && defined(IMAGE_BL31)
-const mmap_region_t *plat_arm_get_secure_partition_mmap(void *cookie)
+const mmap_region_t *plat_get_secure_partition_mmap(void *cookie)
 {
 	return plat_arm_secure_partition_mmap;
 }
 
-const secure_partition_boot_info_t *plat_arm_get_secure_partition_boot_info(
+const secure_partition_boot_info_t *plat_get_secure_partition_boot_info(
 	void *cookie)
 {
 	return &plat_arm_secure_partition_boot_info;

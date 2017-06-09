@@ -212,9 +212,9 @@ unsigned int plat_arm_calc_core_pos(u_register_t mpidr);
 const mmap_region_t *plat_arm_get_mmap(void);
 
 #if SPM && defined(IMAGE_BL31)
-const mmap_region_t *plat_arm_get_secure_partition_mmap(void *cookie);
+const mmap_region_t *plat_get_secure_partition_mmap(void *cookie);
 const secure_partition_boot_info_t
-*plat_arm_get_secure_partition_boot_info(void *cookie);
+*plat_get_secure_partition_boot_info(void *cookie);
 #endif
 
 /* Allow platform to override psci_pm_ops during runtime */
