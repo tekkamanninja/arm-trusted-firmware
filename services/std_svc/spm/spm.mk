@@ -35,10 +35,6 @@ ifneq (${ARCH},aarch64)
         $(error "Error: SPM is only supported on aarch64.")
 endif
 
-ifneq (${PLAT}, fvp)
-        $(error "Error: SPM is only supported on the ARM Base FVP")
-endif
-
 # SPM sources
 
 

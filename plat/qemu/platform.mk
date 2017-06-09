@@ -99,6 +99,9 @@ ENABLE_PLAT_COMPAT	:= 	0
 BL32_RAM_LOCATION	:=	tdram
 ifeq (${BL32_RAM_LOCATION}, tsram)
   BL32_RAM_LOCATION_ID = SEC_SRAM_ID
+ifeq (${SPM}, 1)
+    $(error "Error: SPM is only supported when BL32 is in Secure DRAM on QEMU.")
+endif
 else ifeq (${BL32_RAM_LOCATION}, tdram)
   BL32_RAM_LOCATION_ID = SEC_DRAM_ID
 else

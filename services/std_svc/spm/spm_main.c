@@ -40,6 +40,7 @@
 #include <smcc_helpers.h>
 #include <spm_svc.h>
 #include <xlat_tables_v2.h>
+#include <utils.h>
 #include "spm_private.h"
 
 uintptr_t warm_boot_entry_point;

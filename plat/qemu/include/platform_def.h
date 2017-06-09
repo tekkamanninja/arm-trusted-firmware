@@ -79,6 +79,15 @@
 #define QEMU_OPTEE_PAGEABLE_LOAD_SIZE	0x00400000
 
 /*
+ * Additional secure DRAM for BL31, if SPM is enable
+ * This require a modification on qemu source.
+ */
+#if SPM
+# define SEC_DRAM2_BASE			0x0f000000
+# define SEC_DRAM2_SIZE			0x01000000
+#endif
+
+/*
  * ARM-TF lives in SRAM, partition it here
  */
 
@@ -116,8 +125,13 @@
  * Put BL2 just below BL3-1. BL2_BASE is calculated using the current BL2 debug
  * size plus a little space for growth.
  */
-#define BL2_BASE			(BL31_BASE - 0x1D000)
-#define BL2_LIMIT			BL31_BASE
+#if SPM
+# define BL2_BASE			(BL_RAM_BASE + BL_RAM_SIZE - 0x3D000)
+# define BL2_LIMIT			(BL_RAM_BASE + BL_RAM_SIZE - 0x20000)
+#else
+# define BL2_BASE			(BL31_BASE - 0x1D000)
+# define BL2_LIMIT			BL31_BASE
+#endif
 
 /*
  * BL3-1 specific defines.
@@ -125,10 +139,15 @@
  * Put BL3-1 at the top of the Trusted SRAM. BL31_BASE is calculated using the
  * current BL3-1 debug size plus a little space for growth.
  */
-#define BL31_BASE			(BL31_LIMIT - 0x20000)
-#define BL31_LIMIT			(BL_RAM_BASE + BL_RAM_SIZE)
-#define BL31_PROGBITS_LIMIT		BL1_RW_BASE
-
+#if SPM
+# define BL31_BASE			(BL31_LIMIT - 0x200000)
+# define BL31_LIMIT			(SEC_DRAM2_BASE + SEC_DRAM2_SIZE)
+# define BL31_PROGBITS_LIMIT		BL31_LIMIT
+#else
+# define BL31_BASE			(BL31_LIMIT - 0x20000)
+# define BL31_LIMIT			(BL_RAM_BASE + BL_RAM_SIZE)
+# define BL31_PROGBITS_LIMIT		BL1_RW_BASE
+#endif
 
 /*
  * BL3-2 specific defines.
@@ -136,12 +155,20 @@
  * BL3-2 can execute from Secure SRAM, or Secure DRAM.
  */
 #define BL32_SRAM_BASE			BL_RAM_BASE
-#define BL32_SRAM_LIMIT			BL31_BASE
+#if SPM
+# define BL32_SRAM_LIMIT		(BL_RAM_BASE + 0x1F000)
+#else
+# define BL32_SRAM_LIMIT		BL31_BASE
+#endif
 #define BL32_DRAM_BASE			SEC_DRAM_BASE
 #define BL32_DRAM_LIMIT			(SEC_DRAM_BASE + SEC_DRAM_SIZE)
 
 #define SEC_SRAM_ID			0
 #define SEC_DRAM_ID			1
+
+#if SPM && BL32_RAM_LOCATION_ID == SEC_SRAM_ID
+# error " BL32_RAM_LOCATION_ID can not be SEC_SRAM_ID while SPM is enabled"
+#endif
 
 #if BL32_RAM_LOCATION_ID == SEC_SRAM_ID
 # define BL32_MEM_BASE			BL_RAM_BASE
@@ -161,10 +188,20 @@
 
 #define PLAT_PHY_ADDR_SPACE_SIZE	(1ull << 32)
 #define PLAT_VIRT_ADDR_SPACE_SIZE	(1ull << 32)
-#define MAX_MMAP_REGIONS		8
-#define MAX_XLAT_TABLES			6
+#if SPM
+# define MAX_MMAP_REGIONS		9
+# define MAX_XLAT_TABLES		7
+#else
+# define MAX_MMAP_REGIONS		8
+# define MAX_XLAT_TABLES		6
+#endif
 #define MAX_IO_DEVICES			3
 #define MAX_IO_HANDLES			4
+
+#if SPM && defined(IMAGE_BL31)
+# define SECURE_PARTITION_MMAP_REGIONS		7
+# define SECURE_PARTITION_MAX_XLAT_TABLES	14
+#endif
 
 /*
  * PL011 related constants
@@ -221,5 +258,85 @@
  * System counter
  */
 #define SYS_COUNTER_FREQ_IN_TICKS	((1000 * 1000 * 1000) / 16)
+
+#if SPM
+/* The maximum size of the S-EL0 payload can be 3MB */
+# define SECURE_PARTITION_BASE		BL32_BASE
+# define SECURE_PARTITION_SIZE		ULL(0x300000)
+
+#ifdef IMAGE_BL2
+/* In BL2 all memory allocated to the SPM Payload image is marked as RW. */
+#define SECURE_PARTITION_IMAGE_MMAP		MAP_REGION_FLAT(		\
+						SECURE_PARTITION_BASE,		\
+						SECURE_PARTITION_SIZE,		\
+						MT_MEMORY | MT_RW | MT_SECURE)
+#endif
+#ifdef IMAGE_BL31
+/* All SPM Payload memory is marked as code in S-EL1 */
+#define SECURE_PARTITION_IMAGE_MMAP		MAP_REGION_GRANULARITY(		\
+						SECURE_PARTITION_BASE,		\
+						SECURE_PARTITION_BASE,		\
+						SECURE_PARTITION_SIZE,		\
+						MT_CODE | MT_SECURE,		\
+						PAGE_SIZE)
+#endif
+
+/*
+ * SPM Payload memory is followed by memory shared between EL3 and S-EL0. It is
+ * used by the latter to push data into the former and hence mapped with RO
+ * permission.
+ */
+#define SECURE_PARTITION_SPM_BUF_BASE		(SECURE_PARTITION_BASE + 	\
+						 SECURE_PARTITION_SIZE)
+#define SECURE_PARTITION_SPM_BUF_PCPU_SIZE	ULL(0x20000)
+#define SECURE_PARTITION_SPM_BUF_SIZE		(PLATFORM_CORE_COUNT *		\
+						SECURE_PARTITION_SPM_BUF_PCPU_SIZE)
+#define SECURE_PARTITION_SPM_BUF_MMAP		MAP_REGION_GRANULARITY(		\
+						SECURE_PARTITION_SPM_BUF_BASE,	\
+						SECURE_PARTITION_SPM_BUF_BASE,	\
+						SECURE_PARTITION_SPM_BUF_SIZE,	\
+						MT_MEMORY | MT_RO | MT_SECURE,	\
+						PAGE_SIZE)
+
+/*
+ * Shared memory is followed by memory shared between Normal world and S-EL0 for
+ * passing data during service requests. It will be marked as RW and NS.
+ */
+#define SECURE_PARTITION_NS_BUF_BASE		(PLAT_QEMU_DT_BASE +\
+						 PLAT_QEMU_DT_MAX_SIZE)
+#define SECURE_PARTITION_NS_BUF_SIZE		ULL(0x10000)
+#define SECURE_PARTITION_NS_BUF_MMAP		MAP_REGION_GRANULARITY(		\
+						SECURE_PARTITION_NS_BUF_BASE,	\
+						SECURE_PARTITION_NS_BUF_BASE,	\
+						SECURE_PARTITION_NS_BUF_SIZE,	\
+						MT_MEMORY | MT_RW | MT_NS,	\
+						PAGE_SIZE)
+
+/*
+ * Memory shared with Normal world is followed by RW memory. First there is
+ * stack memory for all CPUs and then there is the common heap memory. Both are
+ * marked with RW permissions.
+ */
+#define SECURE_PARTITION_STACK_BASE		(SECURE_PARTITION_SPM_BUF_BASE +\
+						 SECURE_PARTITION_SPM_BUF_SIZE)
+#define SECURE_PARTITION_STACK_PCPU_SIZE	ULL(0x2000)
+#define SECURE_PARTITION_STACK_TOTAL_SIZE	(PLATFORM_CORE_COUNT *		\
+					 SECURE_PARTITION_STACK_PCPU_SIZE)
+
+#define SECURE_PARTITION_HEAP_BASE		(SECURE_PARTITION_STACK_BASE +	\
+					 SECURE_PARTITION_STACK_TOTAL_SIZE)
+#define SECURE_PARTITION_HEAP_SIZE		BL32_LIMIT - SECURE_PARTITION_HEAP_BASE
+
+#define SECURE_PARTITION_RW_MMAP		MAP_REGION_GRANULARITY(		\
+						SECURE_PARTITION_STACK_BASE,	\
+						SECURE_PARTITION_STACK_BASE,	\
+						(BL32_LIMIT - 			\
+						 SECURE_PARTITION_STACK_BASE),	\
+						MT_MEMORY | MT_RW | MT_SECURE,	\
+						PAGE_SIZE)
+
+/* Total number of memory regions with distinct properties */
+#define SECURE_PARTITION_NUM_MEM_REGIONS	6
+#endif
 
 #endif /* __PLATFORM_DEF_H__ */

@@ -31,6 +31,8 @@
 #ifndef __SECURE_PARTITION_H__
 #define __SECURE_PARTITION_H__
 
+#include <arm_xlat_tables.h>
+
 /* Handle on the Secure partition translation context */
 extern xlat_ctx_t *secure_partition_xlat_ctx_handle;
 
