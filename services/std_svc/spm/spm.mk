@@ -34,11 +34,17 @@ endif
 ifneq (${ARCH},aarch64)
         $(error "Error: SPM is only supported on aarch64.")
 endif
+
+ifeq (${PLAT}, fvp)
 ifneq (${ARM_BL31_IN_DRAM}, 1)
-        $(error "Error: SPM is only supported when BL31 is in Secure DRAM.")
+        $(error "Error: SPM is only supported when BL31 is in Secure DRAM on the ARM Base FVP.")
 endif
-ifneq (${PLAT}, fvp)
-        $(error "Error: SPM is only supported on the ARM Base FVP")
+endif
+
+ifeq (${PLAT}, qemu)
+ifneq (${BL32_RAM_LOCATION}, tdram)
+        $(error "Error: SPM is only supported when BL32 is in Secure DRAM on QEMU.")
+endif
 endif
 
 # SPM sources
