@@ -55,10 +55,10 @@ void secure_partition_setup(void)
 	 * Setup translation tables.
 	 */
 	mmap_add_region_ctx(secure_partition_xlat_ctx_handle,
-			    plat_arm_get_secure_partition_mmap(NULL));
+			    plat_get_secure_partition_mmap(NULL));
 
 	mmap_add_ctx(secure_partition_xlat_ctx_handle,
-		     plat_arm_get_secure_partition_mmap(NULL));
+		     plat_get_secure_partition_mmap(NULL));
 
 	init_xlat_tables_ctx(secure_partition_xlat_ctx_handle);
 
@@ -107,7 +107,7 @@ void secure_partition_prepare_context()
 
 	/* Copy the boot information into shared buffer with secure partition */
 	memcpy((void *) shared_buf_ptr,
-	       (const void *) plat_arm_get_secure_partition_boot_info(NULL),
+	       (const void *) plat_get_secure_partition_boot_info(NULL),
 	       sizeof(secure_partition_boot_info_t));
 
 	/*
@@ -245,7 +245,7 @@ void secure_partition_prepare_warm_boot_context(void)
 	 * cold boot.
 	 */
 	cold_boot_info = (secure_partition_boot_info_t *)
-		plat_arm_get_secure_partition_boot_info(NULL);
+		plat_get_secure_partition_boot_info(NULL);
 
 	/*
 	 * Get a pointer to the base address of the communication buffer between
