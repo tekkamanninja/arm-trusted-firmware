@@ -245,6 +245,37 @@ endif
 endif
 
 ################################################################################
+# Include SPM Makefile if one has been specified
+################################################################################
+ifeq (${SPM}, 1)
+ifeq (${ARCH},aarch32)
+	$(error "Error: SPM is incompatible with AArch32.")
+endif
+ifdef EL3_PAYLOAD_BASE
+        $(warning "SPM and EL3_PAYLOAD_BASE are incompatible build options.")
+        $(warning "The SPM and its BL32 companion will be present but ignored.")
+endif
+        # We expect to locate an spm.mk under the specified SPM directory
+        SPM_MAKE	:=	$(wildcard services/std_svc/spm/spm.mk)
+
+        ifeq (${SPM_MAKE},)
+                $(error Error: No services/std_svc/spm/spm.mk located)
+        endif
+        $(info Including ${SPM_MAKE})
+        include ${SPM_MAKE}
+
+        # If there's BL32 companion for the SPM, we expect that the SPM's
+        # Makefile would set NEED_BL32 to "yes". In this case, the build system
+        # supports two mutually exclusive options:
+        # * BL32 is built from source: then BL32_SOURCES must contain the list
+        #   of source files to build BL32
+        # * BL32 is a prebuilt binary: then BL32 must point to the image file
+        #   that will be included in the FIP
+        # If both BL32_SOURCES and BL32 are defined, the binary takes precedence
+        # over the sources.
+endif
+
+################################################################################
 # Include libraries' Makefile that are used in all BL
 ################################################################################
 

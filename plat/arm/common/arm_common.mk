@@ -66,6 +66,12 @@ ARM_BL31_IN_DRAM		:=	0
 $(eval $(call assert_boolean,ARM_BL31_IN_DRAM))
 $(eval $(call add_define,ARM_BL31_IN_DRAM))
 
+ifeq (${SPM}, 1)
+ifneq (${ARM_BL31_IN_DRAM}, 1)
+	$(error "Error: SPM is only supported when BL31 is in Secure DRAM on ARM.")
+endif
+endif
+
 # Process ARM_PLAT_MT flag
 ARM_PLAT_MT			:=	0
 $(eval $(call assert_boolean,ARM_PLAT_MT))

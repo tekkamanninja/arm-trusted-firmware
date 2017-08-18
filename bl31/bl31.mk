@@ -4,15 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-################################################################################
-# Include SPM Makefile
-################################################################################
-ifeq (${SPM},1)
-$(info Including SPM makefile)
-include services/std_svc/spm/spm.mk
-endif
-
-
 include lib/psci/psci_lib.mk
 
 BL31_SOURCES		+=	bl31/bl31_main.c				\
