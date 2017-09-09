@@ -61,6 +61,8 @@
 #define SP_COMMUNICATE_AARCH64		0xC4000041
 #define SP_COMMUNICATE_AARCH32		0x84000041
 
+#define SP_GET_ERROR_SOURCE_INFO		0xC4000043
+
 #ifndef __ASSEMBLY__
 
 int32_t spm_setup(void);

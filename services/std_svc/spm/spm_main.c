@@ -397,6 +397,23 @@ uint64_t spm_smc_handler(uint32_t smc_fid,
 			 */
 			SMC_RET4(&sp_ctx[linear_id].cpu_ctx,
 				 smc_fid, x2, x3, plat_my_core_pos());
+			break;
+
+		case SP_GET_ERROR_SOURCE_INFO:
+			/* Save the Normal world context */
+			cm_el1_sysregs_context_save(NON_SECURE);
+
+			/*
+			 * Restore the secure world context and prepare for
+			 * entry in S-EL0
+			 */
+			assert(&sp_ctx[linear_id].cpu_ctx ==
+			       cm_get_context(SECURE));
+			cm_el1_sysregs_context_restore(SECURE);
+			cm_set_next_eret_context(SECURE);
+
+			SMC_RET4(&sp_ctx[linear_id].cpu_ctx,
+				 smc_fid, x2, x3, plat_my_core_pos());
 
 		default:
 			break;
